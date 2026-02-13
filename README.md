@@ -13,7 +13,7 @@ This is the list of working crates from the gooseboy-rs library.
 -   [ ] doom
 -   [x] generic
 -   [ ] goosegpu
--   [ ] physics
+-   [x] physics
 -   [ ] riscv
 -   [ ] tests
 
