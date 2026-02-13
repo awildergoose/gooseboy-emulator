@@ -9,7 +9,7 @@ This is the list of working crates from the gooseboy-rs library.
 -   [ ] axolotl
 -   [x] badapple
 -   [ ] bsprenderer
--   [ ] chip8
+-   [x] chip8
 -   [ ] doom
 -   [x] generic
 -   [ ] goosegpu
