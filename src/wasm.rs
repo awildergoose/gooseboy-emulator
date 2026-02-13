@@ -6,12 +6,14 @@ use wasmtime::{Engine, Instance, Linker, Memory, Module, Store};
 
 use crate::{
     SCREEN_HEIGHT, SCREEN_WIDTH,
-    modules::{console::link_console, framebuffer::link_framebuffer, memory::link_memory},
+    modules::{console::link_console, framebuffer::link_framebuffer, input::link_input, memory::link_memory},
 };
 
 pub type WASMPointer = u32;
 pub type WASMPointerMut = u32;
-pub struct WASMHostState {}
+pub struct WASMHostState {
+    pub cursor_grabbed: bool
+}
 
 pub struct WASMRuntime {
     pub engine: FastCell<Engine>,
@@ -84,7 +86,9 @@ pub fn init_wasm(wasm: Vec<u8>) -> anyhow::Result<WASMRuntime> {
     log::info!("engine OK");
     let module = Module::new(&engine, wasm)?;
     log::info!("module OK");
-    let store = Store::new(&engine, WASMHostState {});
+    let store = Store::new(&engine, WASMHostState {
+        cursor_grabbed: false
+    });
     log::info!("store OK");
     let linker = <Linker<WASMHostState>>::new(&engine);
     log::info!("linker OK");
@@ -103,6 +107,8 @@ pub fn init_wasm(wasm: Vec<u8>) -> anyhow::Result<WASMRuntime> {
     log::info!("console linked");
     link_memory(&runtime)?;
     log::info!("memory linked");
+    link_input(&runtime)?;
+    log::info!("input linked");
 
     let linker = runtime.linker.get_mut();
     let store = runtime.store.get_mut();

@@ -28,7 +28,8 @@ async fn main() {
         .filter(Some("gooseboy_emulator"), log::LevelFilter::Info)
         .init();
 
-    let data = fs::read("tests/badapple.wasm").expect("failed to open wasm file");
+    let path = std::env::args().nth(1).unwrap_or_else(|| "tests/badapple.wasm".to_string());
+    let data = fs::read(path).expect("failed to open wasm file");
     let mut wasm = init_wasm(data).expect("failed to init wasm");
     log::info!("initialized!");
     wasm.main().expect("failed to call main function");
