@@ -9,7 +9,6 @@ pub fn link_system(runtime: &WASMRuntime) -> anyhow::Result<()> {
         linker.func_wrap(
             "system",
             "has_permission",
-            #[allow(clippy::cast_possible_truncation)]
             |_: Caller<'_, WASMHostState>, _permission: i32| 1i32,
         )?;
         linker
