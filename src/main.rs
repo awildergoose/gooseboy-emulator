@@ -2,10 +2,11 @@ use std::fs;
 
 use macroquad::prelude::*;
 
-use crate::wasm::init_wasm;
+use crate::{profiler::{begin_profiler, end_profiler, get_profile_averages, rebegin_profiler}, wasm::init_wasm};
 
 mod modules;
 mod utils;
+mod profiler;
 pub mod wasm;
 
 pub const SCREEN_WIDTH: i32 = 640;
@@ -37,18 +38,44 @@ async fn main() {
     let fb_height = SCREEN_HEIGHT as usize;
     let fb_size = fb_width * fb_height * 4;
     let mut fb_buf = vec![0u8; fb_size];
-
+    
     #[allow(clippy::cast_possible_truncation)]
     let texture = Texture2D::from_rgba8(fb_width as u16, fb_height as u16, &fb_buf);
 
     loop {
+        begin_profiler("WASM update");
         wasm.update().expect("wasm update failed");
+        
+        rebegin_profiler("copy framebuffer");
         wasm.get_framebuffer_into(&mut fb_buf)
             .expect("failed to fill framebuffer");
+        
+        rebegin_profiler("upload texture");
         texture.update_from_bytes(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, &fb_buf);
-
+        
+        rebegin_profiler("clear");
         clear_background(BLACK);
+        
+        rebegin_profiler("draw texture");
         draw_texture(&texture, 0.0, 0.0, WHITE);
+        
+        rebegin_profiler("profiler");
+        let font_size = 24.0f32;
+        let mut avgs = get_profile_averages();
+        avgs.sort_by(|a, b| b.1.cmp(&a.1));
+        
+        #[allow(clippy::cast_precision_loss)]
+        for (i, (label, avg)) in avgs.iter().enumerate() {
+            let avg_ms = avg.as_secs_f64() * 1000.0;
+            draw_text(
+                &format!("{label}: {avg_ms:6.3} ms"),
+                0.0,
+                font_size.mul_add(i as f32, font_size),
+                font_size,
+                Color::from_hex(0x00FF_0000),
+            );
+        }
+        end_profiler();
 
         next_frame().await;
     }
