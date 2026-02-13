@@ -48,15 +48,6 @@ This is the list of working crates from the gooseboy-rs library.
 -   [x] fn grab_mouse();
 -   [x] fn release_mouse();
 
-### audio
-
--   [ ] fn play_audio(ptr: Pointer, len: i32) -> i64;
--   [ ] fn stop_audio(id: i64);
--   [ ] fn stop_all_audio();
--   [ ] fn set_audio_volume(id: i64, volume: f32);
--   [ ] fn set_audio_pitch(id: i64, volume: f32);
--   [ ] fn is_audio_playing(id: i64) -> bool;
-
 ### storage
 
 -   [x] fn storage_read(offset: i32, ptr: PointerMut, len: i32) -> i32;
@@ -68,6 +59,15 @@ This is the list of working crates from the gooseboy-rs library.
 
 -   [x] fn get_time_nanos() -> i64;
 -   [x] fn has_permission(permission: i32) -> bool;
+
+### audio
+
+-   [ ] fn play_audio(ptr: Pointer, len: i32) -> i64;
+-   [ ] fn stop_audio(id: i64);
+-   [ ] fn stop_all_audio();
+-   [ ] fn set_audio_volume(id: i64, volume: f32);
+-   [ ] fn set_audio_pitch(id: i64, volume: f32);
+-   [ ] fn is_audio_playing(id: i64) -> bool;
 
 ### gpu
 
