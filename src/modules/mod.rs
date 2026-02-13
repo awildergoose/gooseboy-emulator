@@ -1,5 +1,5 @@
 pub mod console;
 pub mod framebuffer;
-pub mod memory;
 pub mod input;
+pub mod memory;
 pub mod system;

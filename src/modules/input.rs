@@ -7,7 +7,12 @@ use crate::{
 
 pub fn link_input(runtime: &WASMRuntime) -> anyhow::Result<()> {
     runtime.linker.with(|linker| {
-        linker.func_wrap("input", "get_key_code", |_: Caller<'_, WASMHostState>| 0i32)?;
+        linker.func_wrap("input", "get_key_code", |_: Caller<'_, WASMHostState>| {
+            if let Some(ch) = macroquad::prelude::get_char_pressed() {
+                return ch as i32;
+            }
+            -1i32
+        })?;
         linker.func_wrap(
             "input",
             "get_key",

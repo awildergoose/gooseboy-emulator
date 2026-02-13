@@ -33,8 +33,8 @@ pub fn link_framebuffer(runtime: &WASMRuntime) -> anyhow::Result<()> {
                   dest_ptr: WASMPointerMut,
                   dest_w: u32,
                   dest_h: u32,
-                  dest_x: i32,
-                  dest_y: i32,
+                  dest_x: u32,
+                  dest_y: u32,
                   src_w: u32,
                   src_h: u32,
                   src_ptr: WASMPointer,
@@ -46,7 +46,8 @@ pub fn link_framebuffer(runtime: &WASMRuntime) -> anyhow::Result<()> {
                     _ => panic!("blend is not a boolean!"),
                 };
 
-                let src = &mut mem[src_ptr as usize..(src_ptr + (src_w * src_h * 4)) as usize].to_vec();
+                let src =
+                    &mut mem[src_ptr as usize..(src_ptr + (src_w * src_h * 4)) as usize].to_vec();
                 let dest = &mut mem[dest_ptr as usize..(dest_ptr + (dest_w * dest_h * 4)) as usize];
                 let surf_w = dest_w.cast_signed();
                 let surf_h = dest_h.cast_signed();
@@ -57,13 +58,13 @@ pub fn link_framebuffer(runtime: &WASMRuntime) -> anyhow::Result<()> {
 
                 let src_left = dest_x;
                 let src_top = dest_y;
-                let src_right = dest_x + src_w.cast_signed();
-                let src_bottom = dest_y + src_h.cast_signed();
+                let src_right = dest_x + src_w;
+                let src_bottom = dest_y + src_h;
 
-                let vis_left = src_left.max(0);
-                let vis_top = src_top.max(0);
-                let vis_right = src_right.min(surf_w);
-                let vis_bottom = src_bottom.min(surf_h);
+                let vis_left = src_left;
+                let vis_top = src_top;
+                let vis_right = src_right.min(surf_w.try_into().unwrap());
+                let vis_bottom = src_bottom.min(surf_h.try_into().unwrap());
 
                 if vis_left >= vis_right || vis_top >= vis_bottom {
                     return;

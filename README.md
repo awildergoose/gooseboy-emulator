@@ -14,7 +14,7 @@ This is the list of working crates from the gooseboy-rs library.
 -   [x] generic
 -   [ ] goosegpu
 -   [x] physics
--   [ ] riscv
+-   [x] riscv
 -   [ ] tests
 
 ## Host Functions

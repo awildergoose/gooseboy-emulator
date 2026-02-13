@@ -1,3 +1,5 @@
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use macroquad::input::{KeyCode, MouseButton};
 
 // map from LWJGL key to
@@ -138,4 +140,14 @@ pub const fn map_button(button: i32) -> MouseButton {
         2 => MouseButton::Middle,
         _ => MouseButton::Unknown,
     }
+}
+
+pub fn get_time_nanos() -> i64 {
+    i64::try_from(
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos(),
+    )
+    .unwrap()
 }

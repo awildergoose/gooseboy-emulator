@@ -2,11 +2,14 @@ use std::fs;
 
 use macroquad::prelude::*;
 
-use crate::{profiler::{begin_profiler, end_profiler, get_profile_averages, rebegin_profiler}, wasm::init_wasm};
+use crate::{
+    profiler::{begin_profiler, end_profiler, get_profile_averages, rebegin_profiler},
+    wasm::init_wasm,
+};
 
 mod modules;
-mod utils;
 mod profiler;
+mod utils;
 pub mod wasm;
 
 pub const SCREEN_WIDTH: i32 = 640;
@@ -25,11 +28,13 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
     env_logger::builder()
-    .filter_level(log::LevelFilter::Info)
+        .filter_level(log::LevelFilter::Info)
         .filter(Some("gooseboy_emulator"), log::LevelFilter::Trace)
         .init();
 
-    let path = std::env::args().nth(1).unwrap_or_else(|| "tests/badapple.wasm".to_string());
+    let path = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| "tests/generic.wasm".to_string());
     let data = fs::read(path).expect("failed to open wasm file");
     let mut wasm = init_wasm(data).expect("failed to init wasm");
     log::info!("initialized!");
@@ -40,39 +45,41 @@ async fn main() {
     let fb_height = SCREEN_HEIGHT as usize;
     let fb_size = fb_width * fb_height * 4;
     let mut fb_buf = vec![0u8; fb_size];
-    
+
     #[allow(clippy::cast_possible_truncation)]
     let texture = Texture2D::from_rgba8(fb_width as u16, fb_height as u16, &fb_buf);
     texture.set_filter(FilterMode::Nearest);
 
-    log::info!("calling update once");
-    wasm.update().expect("wasm update failed");
-    log::info!("done first update");
-
     loop {
         begin_profiler("WASM update");
         wasm.update().expect("wasm update failed");
-        
+
         rebegin_profiler("copy framebuffer");
         wasm.get_framebuffer_into(&mut fb_buf)
             .expect("failed to fill framebuffer");
-        
+
         rebegin_profiler("upload texture");
         texture.update_from_bytes(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, &fb_buf);
-        
+
         rebegin_profiler("clear");
         clear_background(BLACK);
-        
+
         rebegin_profiler("draw texture");
         draw_texture(&texture, 0.0, 0.0, WHITE);
-        
+
         rebegin_profiler("profiler");
         let font_size = 24.0f32;
         let color = Color::from_hex(0x00FF_0000);
-        draw_text(&format!("FPS: {}", get_fps()), 0.0, font_size, font_size, color);
+        draw_text(
+            &format!("FPS: {}", get_fps()),
+            0.0,
+            font_size,
+            font_size,
+            color,
+        );
         let mut avgs = get_profile_averages();
         avgs.sort_by(|a, b| b.1.cmp(&a.1));
-        
+
         #[allow(clippy::cast_precision_loss)]
         for (i, (label, avg)) in avgs.iter().enumerate() {
             let avg_ms = avg.as_secs_f64() * 1000.0;

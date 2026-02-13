@@ -1,8 +1,9 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-
 use wasmtime::Caller;
 
-use crate::wasm::{WASMHostState, WASMRuntime};
+use crate::{
+    utils::get_time_nanos,
+    wasm::{WASMHostState, WASMRuntime},
+};
 
 pub fn link_system(runtime: &WASMRuntime) -> anyhow::Result<()> {
     runtime.linker.with(|linker| {
@@ -16,12 +17,7 @@ pub fn link_system(runtime: &WASMRuntime) -> anyhow::Result<()> {
                 "system",
                 "get_time_nanos",
                 #[allow(clippy::cast_possible_truncation)]
-                |_: Caller<'_, WASMHostState>| {
-                    SystemTime::now()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap()
-                        .as_nanos() as i64
-                },
+                |_: Caller<'_, WASMHostState>| get_time_nanos(),
             )
             .cloned()
     })?;

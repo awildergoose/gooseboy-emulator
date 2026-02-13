@@ -1,18 +1,24 @@
 #![allow(clippy::missing_panics_doc)]
 #![allow(clippy::missing_errors_doc)]
 use fast_cell::FastCell;
-use std::{time::{SystemTime, UNIX_EPOCH}};
-use wasmtime::{Cache, CacheConfig, Config, Engine, Instance, InstanceAllocationStrategy, Linker, Memory, Module, PoolingAllocationConfig, Store, Strategy};
+use wasmtime::{
+    Cache, CacheConfig, Config, Engine, Instance, InstanceAllocationStrategy, Linker, Memory,
+    Module, PoolingAllocationConfig, Store, Strategy,
+};
 
 use crate::{
     SCREEN_HEIGHT, SCREEN_WIDTH,
-    modules::{console::link_console, framebuffer::link_framebuffer, input::link_input, memory::link_memory, system::link_system},
+    modules::{
+        console::link_console, framebuffer::link_framebuffer, input::link_input,
+        memory::link_memory, system::link_system,
+    },
+    utils::get_time_nanos,
 };
 
 pub type WASMPointer = u32;
 pub type WASMPointerMut = u32;
 pub struct WASMHostState {
-    pub cursor_grabbed: bool
+    pub cursor_grabbed: bool,
 }
 
 pub struct WASMRuntime {
@@ -40,10 +46,7 @@ impl WASMRuntime {
         instance
             .unwrap()
             .get_typed_func::<i64, ()>(&mut *store, "update")?
-            .call(
-                store,
-                SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos() as i64,
-            )?;
+            .call(store, get_time_nanos())?;
         Ok(())
     }
 
@@ -93,7 +96,7 @@ pub fn init_wasm(wasm: Vec<u8>) -> anyhow::Result<WASMRuntime> {
     let mut cache_config = CacheConfig::new();
     cache_config.with_directory(std::env::current_dir()?.join("cache"));
     config.cache(Some(Cache::new(cache_config)?));
-    
+
     let mut pool = PoolingAllocationConfig::new();
     pool.total_memories(100);
     pool.max_memory_size(1 << 31); // 2 GiB
@@ -106,9 +109,12 @@ pub fn init_wasm(wasm: Vec<u8>) -> anyhow::Result<WASMRuntime> {
     log::info!("engine OK");
     let module = Module::new(&engine, wasm)?;
     log::info!("module OK");
-    let store = Store::new(&engine, WASMHostState {
-        cursor_grabbed: false
-    });
+    let store = Store::new(
+        &engine,
+        WASMHostState {
+            cursor_grabbed: false,
+        },
+    );
     log::info!("store OK");
     let linker = <Linker<WASMHostState>>::new(&engine);
     log::info!("linker OK");

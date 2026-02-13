@@ -12,7 +12,7 @@ pub fn link_memory(runtime: &WASMRuntime) -> anyhow::Result<()> {
             move |mut caller: Caller<'_, WASMHostState>,
                   ptr: WASMPointerMut,
                   len: u32,
-                  value: i32| {
+                  value: u32| {
                 let mem = memory2.with(|m| m.unwrap().data_mut(&mut caller));
                 let slice = &mut mem[ptr as usize..(ptr + len) as usize];
 

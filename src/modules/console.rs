@@ -13,7 +13,7 @@ pub fn link_console(runtime: &WASMRuntime) -> anyhow::Result<()> {
                     let mem = memory.with(|m| m.unwrap().data(&mut caller));
                     let slice = &mem[ptr as usize..(ptr + len) as usize];
                     let string = std::str::from_utf8(slice).unwrap_or("<invalid utf8>");
-                    log::info!("WASM: {string}");
+                    println!("{string}");
                 },
             )
             .cloned()
