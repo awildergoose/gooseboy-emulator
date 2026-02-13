@@ -25,7 +25,8 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
     env_logger::builder()
-        .filter(Some("gooseboy_emulator"), log::LevelFilter::Info)
+    .filter_level(log::LevelFilter::Info)
+        .filter(Some("gooseboy_emulator"), log::LevelFilter::Trace)
         .init();
 
     let path = std::env::args().nth(1).unwrap_or_else(|| "tests/badapple.wasm".to_string());
@@ -43,6 +44,10 @@ async fn main() {
     #[allow(clippy::cast_possible_truncation)]
     let texture = Texture2D::from_rgba8(fb_width as u16, fb_height as u16, &fb_buf);
     texture.set_filter(FilterMode::Nearest);
+
+    log::info!("calling update once");
+    wasm.update().expect("wasm update failed");
+    log::info!("done first update");
 
     loop {
         begin_profiler("WASM update");

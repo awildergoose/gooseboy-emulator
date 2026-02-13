@@ -6,7 +6,7 @@ This is a simple, native emulator for the [Gooseboy](https://github.com/awilderg
 
 This is the list of working crates from the gooseboy-rs library.
 
--   [ ] axolotl
+-   [x] axolotl
 -   [x] badapple
 -   [ ] bsprenderer
 -   [x] chip8

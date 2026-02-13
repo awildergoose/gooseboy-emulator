@@ -1,8 +1,8 @@
 #![allow(clippy::missing_panics_doc)]
 #![allow(clippy::missing_errors_doc)]
 use fast_cell::FastCell;
-use std::time::{SystemTime, UNIX_EPOCH};
-use wasmtime::{Engine, Instance, Linker, Memory, Module, Store};
+use std::{time::{SystemTime, UNIX_EPOCH}};
+use wasmtime::{Cache, CacheConfig, Config, Engine, Instance, InstanceAllocationStrategy, Linker, Memory, Module, PoolingAllocationConfig, Store, Strategy};
 
 use crate::{
     SCREEN_HEIGHT, SCREEN_WIDTH,
@@ -82,7 +82,27 @@ impl WASMRuntime {
 }
 
 pub fn init_wasm(wasm: Vec<u8>) -> anyhow::Result<WASMRuntime> {
-    let engine = Engine::default();
+    let mut config = Config::new();
+    config.strategy(Strategy::Cranelift);
+    config.signals_based_traps(true);
+    config.memory_reservation(1 << 31);
+    config.memory_guard_size(1 << 31);
+    config.memory_init_cow(true);
+    config.parallel_compilation(true);
+
+    let mut cache_config = CacheConfig::new();
+    cache_config.with_directory(std::env::current_dir()?.join("cache"));
+    config.cache(Some(Cache::new(cache_config)?));
+    
+    let mut pool = PoolingAllocationConfig::new();
+    pool.total_memories(100);
+    pool.max_memory_size(1 << 31); // 2 GiB
+    pool.total_tables(100);
+    pool.table_elements(5000);
+    pool.total_core_instances(100);
+    config.allocation_strategy(InstanceAllocationStrategy::Pooling(pool));
+
+    let engine = Engine::new(&config)?;
     log::info!("engine OK");
     let module = Module::new(&engine, wasm)?;
     log::info!("module OK");
