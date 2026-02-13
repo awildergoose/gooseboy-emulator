@@ -1,6 +1,7 @@
 use wasmtime::Caller;
 
 use crate::{
+    SCREEN_HEIGHT, SCREEN_WIDTH,
     utils::{map_button, map_key},
     wasm::{WASMHostState, WASMRuntime},
 };
@@ -35,17 +36,19 @@ pub fn link_input(runtime: &WASMRuntime) -> anyhow::Result<()> {
         linker.func_wrap("input", "get_mouse_y", |_: Caller<'_, WASMHostState>| {
             macroquad::input::mouse_position().1 as i32
         })?;
-        // TODO: impl
         linker.func_wrap(
             "input",
             "get_mouse_accumulated_dx",
-            |_: Caller<'_, WASMHostState>| 0f64,
+            |_: Caller<'_, WASMHostState>| {
+                f64::from(-macroquad::input::mouse_delta_position().x) * f64::from(SCREEN_WIDTH)
+            },
         )?;
-        // TODO: impl
         linker.func_wrap(
             "input",
             "get_mouse_accumulated_dy",
-            |_: Caller<'_, WASMHostState>| 0f64,
+            |_: Caller<'_, WASMHostState>| {
+                f64::from(-macroquad::input::mouse_delta_position().y) * f64::from(SCREEN_HEIGHT)
+            },
         )?;
         linker.func_wrap(
             "input",
@@ -56,6 +59,7 @@ pub fn link_input(runtime: &WASMRuntime) -> anyhow::Result<()> {
             "input",
             "grab_mouse",
             |mut caller: Caller<'_, WASMHostState>| {
+                macroquad::input::show_mouse(false);
                 macroquad::input::set_cursor_grab(true);
                 caller.data_mut().cursor_grabbed = true;
             },
@@ -65,6 +69,7 @@ pub fn link_input(runtime: &WASMRuntime) -> anyhow::Result<()> {
                 "input",
                 "release_mouse",
                 |mut caller: Caller<'_, WASMHostState>| {
+                    macroquad::input::show_mouse(true);
                     macroquad::input::set_cursor_grab(false);
                     caller.data_mut().cursor_grabbed = false;
                 },
