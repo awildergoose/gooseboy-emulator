@@ -66,7 +66,7 @@ This is the list of working crates from the gooseboy-rs library.
 -   [ ] fn stop_audio(id: i64);
 -   [ ] fn stop_all_audio();
 -   [ ] fn set_audio_volume(id: i64, volume: f32);
--   [ ] fn set_audio_pitch(id: i64, volume: f32);
+-   [ ] fn set_audio_pitch(id: i64, pitch: f32);
 -   [ ] fn is_audio_playing(id: i64) -> bool;
 
 ### gpu
