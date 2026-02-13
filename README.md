@@ -28,7 +28,7 @@ This is the list of working crates from the gooseboy-rs library.
 -   [x] fn get_framebuffer_width() -> usize;
 -   [x] fn get_framebuffer_height() -> usize;
 -   [x] fn clear_surface(ptr: Pointer, size: i32, color: i32);
--   [ ] fn blit_premultiplied_clipped(dest_ptr: Pointer, dest_w: usize, dest_h: usize, dest_x: i32, dest_y: i32, src_w: usize, src_h: usize, src_ptr: Pointer, blend: bool);
+-   [x] fn blit_premultiplied_clipped(dest_ptr: Pointer, dest_w: usize, dest_h: usize, dest_x: i32, dest_y: i32, src_w: usize, src_h: usize, src_ptr: Pointer, blend: bool);
 
 ### memory
 

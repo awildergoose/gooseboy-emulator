@@ -22,11 +22,13 @@ pub fn link_input(runtime: &WASMRuntime) -> anyhow::Result<()> {
                 i32::from(macroquad::prelude::is_mouse_button_down(map_button(button)))
             },
         )?;
+        #[allow(clippy::cast_possible_truncation)]
         linker.func_wrap("input", "get_mouse_x", |_: Caller<'_, WASMHostState>| {
-            macroquad::input::mouse_position().0
+            macroquad::input::mouse_position().0 as i32
         })?;
+        #[allow(clippy::cast_possible_truncation)]
         linker.func_wrap("input", "get_mouse_y", |_: Caller<'_, WASMHostState>| {
-            macroquad::input::mouse_position().1
+            macroquad::input::mouse_position().1 as i32
         })?;
         // TODO: impl
         linker.func_wrap(
