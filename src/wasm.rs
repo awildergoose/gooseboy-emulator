@@ -10,7 +10,7 @@ use crate::{
     SCREEN_HEIGHT, SCREEN_WIDTH,
     modules::{
         console::link_console, framebuffer::link_framebuffer, input::link_input,
-        memory::link_memory, system::link_system,
+        memory::link_memory, storage::link_storage, system::link_system,
     },
     utils::get_time_nanos,
 };
@@ -137,6 +137,8 @@ pub fn init_wasm(wasm: Vec<u8>) -> anyhow::Result<WASMRuntime> {
     log::info!("input linked");
     link_system(&runtime)?;
     log::info!("system linked");
+    link_storage(&runtime)?;
+    log::info!("storage linked");
 
     let linker = runtime.linker.get_mut();
     let store = runtime.store.get_mut();

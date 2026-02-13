@@ -1,14 +1,16 @@
 use std::fs;
 
-use macroquad::prelude::*;
+use macroquad::{miniquad::window::order_quit, prelude::*};
 
 use crate::{
     profiler::{begin_profiler, end_profiler, get_profile_averages, rebegin_profiler},
+    storage::get_storage,
     wasm::init_wasm,
 };
 
 mod modules;
 mod profiler;
+mod storage;
 mod utils;
 pub mod wasm;
 
@@ -50,7 +52,13 @@ async fn main() {
     let texture = Texture2D::from_rgba8(fb_width as u16, fb_height as u16, &fb_buf);
     texture.set_filter(FilterMode::Nearest);
 
+    prevent_quit();
+
     loop {
+        if is_quit_requested() {
+            break;
+        }
+
         begin_profiler("WASM update");
         wasm.update().expect("wasm update failed");
 
@@ -95,4 +103,7 @@ async fn main() {
 
         next_frame().await;
     }
+
+    get_storage().lock().write_to_disk();
+    order_quit();
 }

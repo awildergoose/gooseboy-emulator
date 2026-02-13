@@ -8,14 +8,14 @@ This is the list of working crates from the gooseboy-rs library.
 
 -   [x] axolotl
 -   [x] badapple
--   [ ] bsprenderer
 -   [x] chip8
--   [ ] doom
+-   [x] doom
 -   [x] generic
--   [ ] goosegpu
 -   [x] physics
 -   [x] riscv
--   [ ] tests
+-   [x] tests
+-   [ ] bsprenderer
+-   [ ] goosegpu
 
 ## Host Functions
 
@@ -42,8 +42,8 @@ This is the list of working crates from the gooseboy-rs library.
 -   [x] fn get_mouse_button(btn: i32) -> bool;
 -   [x] fn get_mouse_x() -> i32;
 -   [x] fn get_mouse_y() -> i32;
--   [ ] fn get_mouse_accumulated_dx() -> f64;
--   [ ] fn get_mouse_accumulated_dy() -> f64;
+-   [x] fn get_mouse_accumulated_dx() -> f64;
+-   [x] fn get_mouse_accumulated_dy() -> f64;
 -   [x] fn is_mouse_grabbed() -> bool;
 -   [x] fn grab_mouse();
 -   [x] fn release_mouse();
@@ -59,15 +59,15 @@ This is the list of working crates from the gooseboy-rs library.
 
 ### storage
 
--   [ ] fn storage_read(offset: i32, ptr: PointerMut, len: i32) -> i32;
--   [ ] fn storage_write(offset: i32, ptr: Pointer, len: i32) -> i32;
--   [ ] fn storage_size() -> u32;
--   [ ] fn storage_clear();
+-   [x] fn storage_read(offset: i32, ptr: PointerMut, len: i32) -> i32;
+-   [x] fn storage_write(offset: i32, ptr: Pointer, len: i32) -> i32;
+-   [x] fn storage_size() -> u32;
+-   [x] fn storage_clear();
 
 ### system
 
 -   [x] fn get_time_nanos() -> i64;
--   [ ] fn has_permission(permission: i32) -> bool;
+-   [x] fn has_permission(permission: i32) -> bool;
 
 ### gpu
 
