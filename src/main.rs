@@ -62,6 +62,8 @@ async fn main() {
         
         rebegin_profiler("profiler");
         let font_size = 24.0f32;
+        let color = Color::from_hex(0x00FF_0000);
+        draw_text(&format!("FPS: {}", get_fps()), 0.0, font_size, font_size, color);
         let mut avgs = get_profile_averages();
         avgs.sort_by(|a, b| b.1.cmp(&a.1));
         
@@ -71,9 +73,9 @@ async fn main() {
             draw_text(
                 &format!("{label}: {avg_ms:6.3} ms"),
                 0.0,
-                font_size.mul_add(i as f32, font_size),
+                font_size + font_size.mul_add(i as f32, font_size),
                 font_size,
-                Color::from_hex(0x00FF_0000),
+                color,
             );
         }
         end_profiler();
