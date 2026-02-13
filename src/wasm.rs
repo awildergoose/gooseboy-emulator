@@ -6,7 +6,7 @@ use wasmtime::{Engine, Instance, Linker, Memory, Module, Store};
 
 use crate::{
     SCREEN_HEIGHT, SCREEN_WIDTH,
-    modules::{console::link_console, framebuffer::link_framebuffer, input::link_input, memory::link_memory},
+    modules::{console::link_console, framebuffer::link_framebuffer, input::link_input, memory::link_memory, system::link_system},
 };
 
 pub type WASMPointer = u32;
@@ -109,6 +109,8 @@ pub fn init_wasm(wasm: Vec<u8>) -> anyhow::Result<WASMRuntime> {
     log::info!("memory linked");
     link_input(&runtime)?;
     log::info!("input linked");
+    link_system(&runtime)?;
+    log::info!("system linked");
 
     let linker = runtime.linker.get_mut();
     let store = runtime.store.get_mut();

@@ -37,16 +37,16 @@ This is the list of working crates from the gooseboy-rs library.
 
 ### input
 
--   [ ] fn get_key_code() -> i32;
--   [ ] fn get_key(key: i32) -> bool;
--   [ ] fn get_mouse_button(btn: i32) -> bool;
--   [ ] fn get_mouse_x() -> i32;
--   [ ] fn get_mouse_y() -> i32;
+-   [x] fn get_key_code() -> i32;
+-   [x] fn get_key(key: i32) -> bool;
+-   [x] fn get_mouse_button(btn: i32) -> bool;
+-   [x] fn get_mouse_x() -> i32;
+-   [x] fn get_mouse_y() -> i32;
 -   [ ] fn get_mouse_accumulated_dx() -> f64;
 -   [ ] fn get_mouse_accumulated_dy() -> f64;
--   [ ] fn is_mouse_grabbed() -> bool;
--   [ ] fn grab_mouse();
--   [ ] fn release_mouse();
+-   [x] fn is_mouse_grabbed() -> bool;
+-   [x] fn grab_mouse();
+-   [x] fn release_mouse();
 
 ### audio
 
@@ -66,7 +66,7 @@ This is the list of working crates from the gooseboy-rs library.
 
 ### system
 
--   [ ] fn get_time_nanos() -> i64;
+-   [x] fn get_time_nanos() -> i64;
 -   [ ] fn has_permission(permission: i32) -> bool;
 
 ### gpu
