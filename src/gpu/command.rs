@@ -1,6 +1,11 @@
-use crate::gpu::vertex::{PrimitiveType, Vertex};
+use macroquad::{
+    math::{Vec4, vec2, vec3},
+    ui::Vertex,
+};
 
-pub struct CommandReader<'a> {
+use crate::gpu::vertex::PrimitiveType;
+
+struct CommandReader<'a> {
     buf: &'a [u8],
     pos: usize,
 }
@@ -23,6 +28,10 @@ impl CommandReader<'_> {
         self.pos += 4;
         f32::from_le_bytes(bytes.try_into().unwrap())
     }
+
+    const fn set_pos(&mut self, pos: usize) {
+        self.pos = pos;
+    }
 }
 
 #[repr(u8)]
@@ -44,7 +53,31 @@ pub enum GpuCommand {
     Identity,
 }
 
+// TODO opcode table
 impl GpuCommand {
+    pub fn size_of(buf: &[u8]) -> u32 {
+        let mut reader = CommandReader { buf, pos: 0 };
+        let opcode = reader.read_u8();
+
+        match opcode {
+            0x02 => 1,
+            0x04 | 0x06 => 4,
+            0x05 => 20,
+            0x07 => {
+                // RegisterTexture
+                let w = reader.read_u32();
+                let h = reader.read_u32();
+                reader.set_pos(0);
+                8 + (w * h * 4)
+            }
+            0x08 | 0x0A | 0x0B => 12,
+            0x09 => 16,
+            0x0C | 0x0D => 64,
+            0x00 | 0x01 | 0x03 | 0x0E => 0,
+            _ => panic!("unknown opcode: {opcode}"),
+        }
+    }
+
     #[allow(clippy::many_single_char_names)]
     pub fn deserialize(buf: &[u8]) -> Self {
         let mut reader = CommandReader { buf, pos: 0 };
@@ -79,7 +112,12 @@ impl GpuCommand {
                 let u = reader.read_f32();
                 let v = reader.read_f32();
 
-                Self::EmitVertex(Vertex { x, y, z, u, v })
+                Self::EmitVertex(Vertex {
+                    position: vec3(x, y, z),
+                    uv: vec2(u, v),
+                    color: [255, 255, 255, 255], // unused
+                    normal: Vec4::ZERO,          // unused
+                })
             }
             0x06 => {
                 // BindTexture(4), // u32 id
