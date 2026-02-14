@@ -101,6 +101,7 @@ impl GpuRenderer {
                 }
                 GpuCommand::EmitVertex(vertex) => {
                     let mut primitive_type = PrimitiveType::Triangles;
+                    let immediate_mode = self.recordings.is_empty();
                     let indices: &mut Vec<u16>;
                     let len: usize;
 
@@ -132,7 +133,7 @@ impl GpuRenderer {
                                     vertices: vec![],
                                     texture: Some(texture),
                                 },
-                                primitive_type: PrimitiveType::Triangles,
+                                primitive_type: primitive_type.clone(),
                             });
                         }
 
@@ -143,19 +144,34 @@ impl GpuRenderer {
                         len = imm.mesh.vertices.len();
                     }
 
+                    let mut is_multiple = false;
+
                     match primitive_type {
                         PrimitiveType::Triangles => {
                             if len.is_multiple_of(3) {
                                 let i = u16::try_from(len - 3).unwrap();
                                 indices.extend_from_slice(&[i, i + 1, i + 2]);
+                                is_multiple = true;
                             }
                         }
                         PrimitiveType::Quads => {
                             if len.is_multiple_of(4) {
                                 let i = u16::try_from(len - 4).unwrap();
                                 indices.extend_from_slice(&[i, i + 1, i + 2, i, i + 2, i + 3]);
+                                is_multiple = true;
                             }
                         }
+                    }
+
+                    if is_multiple && immediate_mode {
+                        let gl = unsafe { get_internal_gl().quad_gl };
+                        self.set_uniforms();
+                        let imm = self.immediate_mesh.as_mut().unwrap();
+                        gl.texture(imm.mesh.texture.as_ref());
+                        gl.draw_mode(macroquad::prelude::DrawMode::Triangles);
+                        gl.geometry(&imm.mesh.vertices, &imm.mesh.indices);
+
+                        self.immediate_mesh = None;
                     }
                 }
                 GpuCommand::BindTexture(id) => {
@@ -193,13 +209,6 @@ impl GpuRenderer {
                     .stack
                     .set_top_from_cols(ModelMatrix::identity().as_cols_array()),
             }
-        }
-
-        if let Some(imm) = self.immediate_mesh.as_ref() {
-            let gl = unsafe { get_internal_gl().quad_gl };
-            gl.texture(imm.mesh.texture.as_ref());
-            gl.draw_mode(macroquad::prelude::DrawMode::Triangles);
-            gl.geometry(&imm.mesh.vertices, &imm.mesh.indices);
         }
 
         self.bound_texture = None;

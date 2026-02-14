@@ -46,7 +46,7 @@ async fn main() {
 
     let path = std::env::args()
         .nth(1)
-        .unwrap_or_else(|| "tests/generic.wasm".to_string());
+        .unwrap_or_else(|| "tests/goosegpu.wasm".to_string());
     let data = fs::read(path).expect("failed to open wasm file");
     let mut wasm = init_wasm(data).expect("failed to init wasm");
     log::info!("initialized!");
