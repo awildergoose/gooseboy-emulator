@@ -60,7 +60,6 @@ async fn main() {
 
     #[allow(clippy::cast_possible_truncation)]
     let texture = Texture2D::from_rgba8(fb_width as u16, fb_height as u16, &fb_buf);
-    texture.set_filter(FilterMode::Nearest);
 
     if wasm.gpu_main().is_ok() {
         log::info!("gpu main function called!");
