@@ -6,9 +6,13 @@ use crate::gpu::{
     mesh_registry::{GpuMesh, MeshId, get_mesh_registry},
     model_matrix::{ModelMatrix, ModelMatrixStack},
     texture_registry::{TextureId, get_texture_registry},
+    vertex::PrimitiveType,
 };
 use fast_cell::FastCell;
-use macroquad::prelude::{Material, MaterialParams, ShaderSource, UniformDesc, load_material};
+use macroquad::{
+    models::Mesh,
+    prelude::{Material, MaterialParams, ShaderSource, UniformDesc, load_material},
+};
 use parking_lot::Mutex;
 
 pub struct GpuRenderer {
@@ -16,7 +20,16 @@ pub struct GpuRenderer {
     pub queue: VecDeque<GpuCommand>,
     pub stack: ModelMatrixStack,
     pub recordings: VecDeque<FastCell<GpuMesh>>,
+    pub immediate_meshes: VecDeque<FastCell<GpuMesh>>,
     pub gpu_material: Material,
+}
+
+const fn empty_mesh() -> Mesh {
+    Mesh {
+        indices: vec![],
+        vertices: vec![],
+        texture: None,
+    }
 }
 
 impl GpuRenderer {
@@ -26,6 +39,7 @@ impl GpuRenderer {
             queue: VecDeque::new(),
             stack: ModelMatrixStack::new(64),
             recordings: VecDeque::new(),
+            immediate_meshes: VecDeque::new(),
             gpu_material: load_material(
                 ShaderSource::Glsl {
                     vertex: include_str!("../shaders/vertex.glsl"),
@@ -42,6 +56,20 @@ impl GpuRenderer {
             )
             .expect("failed to load gpu shader"),
         }
+    }
+
+    // TODO: primitive_type
+    pub fn get_immediate_mesh(&mut self) -> FastCell<GpuMesh> {
+        let last = self.immediate_meshes.back();
+        if last.is_none() {
+            let m = FastCell::new(GpuMesh {
+                mesh: empty_mesh(),
+                primitive_type: PrimitiveType::Triangles,
+            });
+            self.immediate_meshes.push_back(m.clone());
+            return m;
+        }
+        last.unwrap().clone()
     }
 
     pub fn set_uniforms(&self) {
@@ -81,19 +109,16 @@ impl GpuRenderer {
                     }
                 }
                 GpuCommand::EmitVertex(vertex) => {
-                    if let Some(recording) = self.recordings.back_mut() {
-                        let mesh = &mut recording.get_mut().mesh;
+                    let mut immediate = self.get_immediate_mesh();
+                    let recording = self.recordings.back_mut().unwrap_or(&mut immediate);
 
-                        mesh.vertices.push(vertex);
+                    let mesh = &mut recording.get_mut().mesh;
+                    mesh.vertices.push(vertex);
 
-                        let len = mesh.vertices.len();
-                        if len >= 3 {
-                            let i = u16::try_from(len - 3).unwrap();
-                            mesh.indices.extend_from_slice(&[i, i + 1, i + 2]);
-                        }
-                    } else {
-                        // TODO: immediate mode, push vertex
-                        todo!();
+                    let len = mesh.vertices.len();
+                    if len >= 3 {
+                        let i = u16::try_from(len - 3).unwrap();
+                        mesh.indices.extend_from_slice(&[i, i + 1, i + 2]);
                     }
                 }
                 GpuCommand::BindTexture(id) => {
@@ -128,6 +153,12 @@ impl GpuRenderer {
                     .stack
                     .set_top_from_cols(ModelMatrix::identity().as_cols_array()),
             }
+        }
+
+        while let Some(mut mesh) = self.immediate_meshes.pop_front() {
+            let m = mesh.get_mut();
+            self.set_uniforms();
+            macroquad::models::draw_mesh(&m.mesh);
         }
 
         macroquad::material::gl_use_default_material();
