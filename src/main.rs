@@ -3,11 +3,13 @@ use std::fs;
 use macroquad::{miniquad::window::order_quit, prelude::*};
 
 use crate::{
+    audio_manager::get_raw_audio_manager,
     profiler::{begin_profiler, end_profiler, get_profile_averages, rebegin_profiler},
     storage::get_storage,
     wasm::init_wasm,
 };
 
+mod audio_manager;
 mod modules;
 mod profiler;
 mod storage;
@@ -59,7 +61,12 @@ async fn main() {
             break;
         }
 
-        begin_profiler("WASM update");
+        begin_profiler("audio update");
+        {
+            get_raw_audio_manager().lock().update();
+        } // release lock
+
+        rebegin_profiler("WASM update");
         wasm.update().expect("wasm update failed");
 
         rebegin_profiler("copy framebuffer");

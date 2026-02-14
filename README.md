@@ -62,12 +62,12 @@ This is the list of working crates from the gooseboy-rs library.
 
 ### audio
 
--   [ ] fn play_audio(ptr: Pointer, len: i32) -> i64;
--   [ ] fn stop_audio(id: i64);
--   [ ] fn stop_all_audio();
--   [ ] fn set_audio_volume(id: i64, volume: f32);
--   [ ] fn set_audio_pitch(id: i64, pitch: f32);
--   [ ] fn is_audio_playing(id: i64) -> bool;
+-   [x] fn play_audio(ptr: Pointer, len: i32) -> i64;
+-   [x] fn stop_audio(id: i64);
+-   [x] fn stop_all_audio();
+-   [x] fn set_audio_volume(id: i64, volume: f32);
+-   [x] fn set_audio_pitch(id: i64, pitch: f32);
+-   [x] fn is_audio_playing(id: i64) -> bool;
 
 ### gpu
 
@@ -75,3 +75,10 @@ This is the list of working crates from the gooseboy-rs library.
 -   [ ] fn set_camera_transform(x: f32, y: f32, z: f32, yaw: f32, pitch: f32);
 -   [ ] fn submit_gpu_commands(ptr: Pointer, count: i32);
 -   [ ] fn gpu_read(offset: i32, ptr: Pointer, len: i32) -> i32;
+
+## TODO
+
+-   [ ] Maintain the same file format for storage files
+-   [ ] Name storage file based on running crate
+-   [ ] Better CLI
+-   [ ] Allow connecting to WASM using a debugger (GDB/LLDB)
