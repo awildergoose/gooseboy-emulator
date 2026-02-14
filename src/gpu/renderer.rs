@@ -8,7 +8,7 @@ use crate::gpu::{
     texture_registry::{TextureId, get_texture_registry},
 };
 use fast_cell::FastCell;
-use macroquad::prelude::{Material, MaterialParams, ShaderSource, load_material};
+use macroquad::prelude::{Material, MaterialParams, ShaderSource, UniformDesc, load_material};
 use parking_lot::Mutex;
 
 pub struct GpuRenderer {
@@ -31,18 +31,22 @@ impl GpuRenderer {
                     vertex: include_str!("../shaders/vertex.glsl"),
                     fragment: include_str!("../shaders/fragment.glsl"),
                 },
-                MaterialParams::default(),
+                MaterialParams {
+                    uniforms: vec![UniformDesc::new(
+                        "ModelView",
+                        macroquad::prelude::UniformType::Mat4,
+                    )],
+                    textures: vec![],
+                    ..Default::default()
+                },
             )
             .expect("failed to load gpu shader"),
         }
     }
 
     pub fn set_uniforms(&self) {
-        // mat4 Model, Projection;
-        self.gpu_material
-            .set_uniform("Model", self.stack.top().as_cols_array());
-        // self.gpu_material
-        //     .set_uniform("Projection", self.stack.top().as_cols_array());
+        let model = self.stack.top().mat;
+        self.gpu_material.set_uniform("ModelView", model);
     }
 
     pub fn queue_command(&mut self, command: GpuCommand) {
@@ -52,7 +56,6 @@ impl GpuRenderer {
     pub fn execute_commands(&mut self) {
         macroquad::material::gl_use_material(&self.gpu_material);
 
-        // pop and read commands, and do stuff idk
         while let Some(command) = self.queue.pop_front() {
             // log::trace!("command: {command:?}");
 

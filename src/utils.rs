@@ -1,4 +1,7 @@
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{
+    sync::OnceLock,
+    time::{Duration, Instant},
+};
 
 use macroquad::input::{KeyCode, MouseButton};
 
@@ -142,12 +145,11 @@ pub const fn map_button(button: i32) -> MouseButton {
     }
 }
 
+static START: OnceLock<Instant> = OnceLock::new();
+
+#[allow(clippy::cast_possible_truncation)]
 pub fn get_time_nanos() -> i64 {
-    i64::try_from(
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_nanos(),
-    )
-    .unwrap()
+    let start = START.get_or_init(Instant::now);
+    let elapsed: Duration = start.elapsed();
+    elapsed.as_nanos() as i64
 }
