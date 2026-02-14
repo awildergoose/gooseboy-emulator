@@ -9,8 +9,8 @@ use wasmtime::{
 use crate::{
     SCREEN_HEIGHT, SCREEN_WIDTH,
     modules::{
-        audio::link_audio, console::link_console, framebuffer::link_framebuffer, input::link_input,
-        memory::link_memory, storage::link_storage, system::link_system,
+        audio::link_audio, console::link_console, framebuffer::link_framebuffer, gpu::link_gpu,
+        input::link_input, memory::link_memory, storage::link_storage, system::link_system,
     },
     utils::get_time_nanos,
 };
@@ -140,6 +140,8 @@ pub fn init_wasm(wasm: Vec<u8>) -> anyhow::Result<WASMRuntime> {
     log::info!("storage linked");
     link_audio(&runtime)?;
     log::info!("audio linked");
+    link_gpu(&runtime)?;
+    log::info!("gpu linked");
 
     let linker = runtime.linker.get_mut();
     let store = runtime.store.get_mut();
