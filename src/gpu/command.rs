@@ -46,7 +46,7 @@ pub enum GpuCommand {
 
 impl GpuCommand {
     #[allow(clippy::many_single_char_names)]
-    pub fn deserialize(buf: &Vec<u8>) -> Self {
+    pub fn deserialize(buf: &[u8]) -> Self {
         let mut reader = CommandReader { buf, pos: 0 };
         let opcode = reader.read_u8();
 
