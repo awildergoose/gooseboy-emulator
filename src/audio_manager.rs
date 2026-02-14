@@ -26,6 +26,7 @@ pub struct RawAudioManager {
 impl RawAudioManager {
     pub fn new(max_concurrent_sounds: usize) -> Self {
         let manager = AudioManager::new(AudioManagerSettings::default()).unwrap();
+
         Self {
             manager: Arc::new(Mutex::new(manager)),
             active: Arc::new(Mutex::new(HashMap::new())),
@@ -54,6 +55,7 @@ impl RawAudioManager {
             slice: None,
             frames,
         };
+
         let mut manager = self.manager.lock();
         let handle = manager.play(sound_data).unwrap();
         drop(manager);
@@ -69,6 +71,7 @@ impl RawAudioManager {
 
     pub fn stop(&self, id: SoundId) {
         let mut active = self.active.lock();
+
         if let Some(mut ps) = active.remove(&id) {
             ps.handle.stop(Tween::default());
         }
@@ -76,29 +79,32 @@ impl RawAudioManager {
 
     pub fn stop_all_sounds(&self) {
         let mut active = self.active.lock();
+
         for ps in active.values_mut() {
             ps.handle.stop(Tween::default());
         }
+
         active.clear();
     }
 
     pub fn set_volume(&self, id: SoundId, volume: f64) {
         let mut active = self.active.lock();
+
         if let Some(ps) = active.get_mut(&id) {
-            let vol = volume.clamp(0.0, 10.0);
+            let volume = volume.clamp(0.0, 10.0);
 
             #[allow(clippy::cast_possible_truncation)]
             ps.handle
-                .set_volume(Decibels::from(vol as f32), Tween::default());
+                .set_volume(Decibels::from(volume as f32), Tween::default());
         }
     }
 
     pub fn set_pitch(&self, id: SoundId, pitch: f64) {
         let mut active = self.active.lock();
+
         if let Some(ps) = active.get_mut(&id) {
-            let p = pitch.clamp(0.1, 10.0);
-            // no pitch function, this is the closest we have!
-            ps.handle.set_playback_rate(p, Tween::default());
+            let pitch = pitch.clamp(0.1, 10.0);
+            ps.handle.set_playback_rate(pitch, Tween::default());
         }
     }
 
@@ -119,6 +125,7 @@ impl RawAudioManager {
                 }
             })
             .collect();
+
         for id in finished {
             active.remove(&id);
         }
