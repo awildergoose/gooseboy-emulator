@@ -10,6 +10,7 @@ use crate::{
 };
 
 mod audio_manager;
+mod gpu;
 mod modules;
 mod profiler;
 mod storage;
