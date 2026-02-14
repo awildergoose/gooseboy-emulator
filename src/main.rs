@@ -4,6 +4,7 @@ use macroquad::{miniquad::window::order_quit, prelude::*};
 
 use crate::{
     audio_manager::get_raw_audio_manager,
+    gpu::renderer::get_gpu_renderer,
     profiler::{begin_profiler, end_profiler, get_profile_averages, rebegin_profiler},
     storage::get_storage,
     wasm::init_wasm,
@@ -55,6 +56,10 @@ async fn main() {
     let texture = Texture2D::from_rgba8(fb_width as u16, fb_height as u16, &fb_buf);
     texture.set_filter(FilterMode::Nearest);
 
+    if wasm.gpu_main().is_ok() {
+        log::info!("gpu main function called!");
+    }
+
     prevent_quit();
 
     loop {
@@ -80,12 +85,24 @@ async fn main() {
         rebegin_profiler("clear");
         clear_background(BLACK);
 
+        rebegin_profiler("draw 3d");
+        {
+            let mut gpu = get_gpu_renderer().lock();
+            set_camera(&gpu.camera.cam);
+            draw_grid(20, 1.0, GRAY, DARKGRAY);
+            draw_cube(vec3(0.0, 1.0, 0.0), vec3(1.0, 1.0, 1.0), None, RED);
+            gpu.execute_commands();
+        }
+
+        rebegin_profiler("reset camera");
+        set_default_camera();
+
         rebegin_profiler("draw texture");
         draw_texture(&texture, 0.0, 0.0, WHITE);
 
         rebegin_profiler("profiler");
         let font_size = 24.0f32;
-        let color = Color::from_hex(0x00FF_0000);
+        let color = Color::new(0.0, 1.0, 0.0, 0.5);
         draw_text(
             &format!("FPS: {}", get_fps()),
             0.0,

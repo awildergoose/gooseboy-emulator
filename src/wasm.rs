@@ -39,6 +39,15 @@ impl WASMRuntime {
             .call(store, ())
     }
 
+    pub fn gpu_main(&mut self) -> anyhow::Result<()> {
+        let store = self.store.get_mut();
+        let instance = self.instance.get_mut();
+        instance
+            .unwrap()
+            .get_typed_func::<(), ()>(&mut *store, "gpu_main")?
+            .call(store, ())
+    }
+
     #[allow(clippy::cast_possible_truncation)]
     pub fn update(&mut self) -> anyhow::Result<()> {
         let store = self.store.get_mut();

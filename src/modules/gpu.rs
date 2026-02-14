@@ -6,8 +6,6 @@ use crate::{
 };
 
 pub fn link_gpu(runtime: &WASMRuntime) -> anyhow::Result<()> {
-    let memory = runtime.memory.clone();
-
     runtime.linker.with(|linker| {
         let memory = runtime.memory.clone();
         linker.func_wrap(
@@ -45,11 +43,20 @@ pub fn link_gpu(runtime: &WASMRuntime) -> anyhow::Result<()> {
                 }
             },
         )?;
+        let memory = runtime.memory.clone();
         linker
             .func_wrap(
                 "gpu",
                 "gpu_read",
-                |_: Caller<'_, WASMHostState>, _offset: u32, _ptr: WASMPointer, _len: u32| 0i32,
+                move |mut caller: Caller<'_, WASMHostState>,
+                      _offset: u32,
+                      ptr: WASMPointer,
+                      len: u32| {
+                    let mem = memory.with(|m| m.unwrap().data_mut(&mut caller));
+                    let src = &[0].repeat(len as usize);
+                    mem[(ptr) as usize..(ptr + len) as usize].copy_from_slice(src);
+                    len.cast_signed()
+                },
             )
             .cloned()
     })?;

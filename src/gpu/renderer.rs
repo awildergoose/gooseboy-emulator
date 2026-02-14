@@ -1,11 +1,16 @@
 use std::{collections::VecDeque, sync::OnceLock};
 
-use crate::gpu::{camera::GpuCamera, command::GpuCommand};
+use crate::gpu::{
+    camera::GpuCamera,
+    command::GpuCommand,
+    model_matrix::{ModelMatrix, ModelMatrixStack},
+};
 use parking_lot::Mutex;
 
 pub struct GpuRenderer {
     pub camera: GpuCamera,
     pub queue: VecDeque<GpuCommand>,
+    pub stack: ModelMatrixStack,
 }
 
 impl GpuRenderer {
@@ -13,6 +18,7 @@ impl GpuRenderer {
         Self {
             camera: GpuCamera::new(),
             queue: VecDeque::new(),
+            stack: ModelMatrixStack::new(64),
         }
     }
 
@@ -24,25 +30,27 @@ impl GpuRenderer {
         // pop and read commands, and do stuff idk
         while let Some(command) = self.queue.pop_front() {
             match command {
-                GpuCommand::Push => self.camera.t_push(),
-                GpuCommand::Pop => self.camera.t_pop(),
-                GpuCommand::PushRecord(primitive_type) => todo!(),
-                GpuCommand::PopRecord => todo!(),
-                GpuCommand::DrawRecorded(id) => todo!(),
-                GpuCommand::EmitVertex(vertex) => todo!(),
-                GpuCommand::BindTexture(id) => todo!(),
-                GpuCommand::RegisterTexture { w, h, rgba } => todo!(),
-                GpuCommand::Translate { x, y, z } => self.camera.t_translate(x, y, z),
+                GpuCommand::Push => self.stack.push(),
+                GpuCommand::Pop => self.stack.pop(),
+                GpuCommand::PushRecord(primitive_type) => {}
+                GpuCommand::PopRecord => {}
+                GpuCommand::DrawRecorded(id) => {}
+                GpuCommand::EmitVertex(vertex) => {}
+                GpuCommand::BindTexture(id) => {}
+                GpuCommand::RegisterTexture { w, h, rgba } => {}
+                GpuCommand::Translate { x, y, z } => self.stack.top_mut().translate(x, y, z),
                 GpuCommand::RotateAxis { x, y, z, angle } => {
-                    self.camera.t_rotate_axis(x, y, z, angle);
+                    self.stack.top_mut().rotate_axis(x, y, z, angle);
                 }
                 GpuCommand::RotateEuler { yaw, pitch, roll } => {
-                    self.camera.t_rotate_euler(yaw, pitch, roll);
+                    self.stack.top_mut().rotate_euler(yaw, pitch, roll);
                 }
-                GpuCommand::Scale { x, y, z } => self.camera.t_scale(x, y, z),
-                GpuCommand::LoadMatrix(m) => self.camera.t_load_matrix(m),
-                GpuCommand::MulMatrix(m) => self.camera.t_mul_matrix(m),
-                GpuCommand::Identity => self.camera.t_identity(),
+                GpuCommand::Scale { x, y, z } => self.stack.top_mut().scale(x, y, z),
+                GpuCommand::LoadMatrix(m) => self.stack.set_top_from_cols(m),
+                GpuCommand::MulMatrix(m) => self.stack.mul_top_by_cols(m),
+                GpuCommand::Identity => self
+                    .stack
+                    .set_top_from_cols(ModelMatrix::identity().as_cols_array()),
             }
         }
     }
