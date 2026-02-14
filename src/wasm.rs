@@ -51,15 +51,20 @@ impl WASMRuntime {
     }
 
     #[allow(clippy::cast_sign_loss)]
-    pub fn get_framebuffer(&mut self) -> anyhow::Result<Vec<u8>> {
+    fn get_framebuffer_ptr(&mut self) -> anyhow::Result<usize> {
         let store = self.store.get_mut();
         let instance = self.instance.get_mut();
-        let memory = self.memory.get_mut().unwrap();
 
-        let buffer_ptr = instance
+        Ok(instance
             .unwrap()
             .get_typed_func::<(), i32>(&mut *store, "get_framebuffer_ptr")?
-            .call(&mut *store, ())? as usize;
+            .call(&mut *store, ())? as usize)
+    }
+
+    pub fn get_framebuffer(&mut self) -> anyhow::Result<Vec<u8>> {
+        let buffer_ptr = self.get_framebuffer_ptr()?;
+        let store = self.store.get_mut();
+        let memory = self.memory.get_mut().unwrap();
 
         let mut pixels = vec![0u8; (SCREEN_WIDTH * SCREEN_HEIGHT * 4) as usize];
         memory.read(&mut *store, buffer_ptr, &mut pixels)?;
@@ -67,16 +72,10 @@ impl WASMRuntime {
         Ok(pixels)
     }
 
-    #[allow(clippy::cast_sign_loss)]
     pub fn get_framebuffer_into(&mut self, pixels: &mut [u8]) -> anyhow::Result<()> {
+        let buffer_ptr = self.get_framebuffer_ptr()?;
         let store = self.store.get_mut();
-        let instance = self.instance.get_mut();
         let memory = self.memory.get_mut().unwrap();
-
-        let buffer_ptr = instance
-            .unwrap()
-            .get_typed_func::<(), i32>(&mut *store, "get_framebuffer_ptr")?
-            .call(&mut *store, ())? as usize;
 
         memory.read(&mut *store, buffer_ptr, pixels)?;
 

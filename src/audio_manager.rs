@@ -12,6 +12,7 @@ pub type SoundId = u64;
 
 pub struct PlayingSound {
     handle: StaticSoundHandle,
+    #[allow(unused)]
     id: SoundId,
 }
 
@@ -33,19 +34,19 @@ impl RawAudioManager {
         }
     }
 
-    pub fn play(&self, pcm: &[i16], sample_rate: u32) -> Option<SoundId> {
-        if !pcm.len().is_multiple_of(2) {
-            return None;
-        }
-
+    pub fn play(&self, pcm: &[i16], sample_rate: u32) -> anyhow::Result<SoundId> {
         let mut active = self.active.lock();
         if active.len() >= self.max_concurrent_sounds {
-            return None;
+            return Err(anyhow::anyhow!("too many sounds"));
         }
 
         let frames = pcm
-            .iter()
-            .map(|p| Frame::new(f32::from(*p), f32::from(*p)))
+            .chunks_exact(2)
+            .map(|c| {
+                let l = f32::from(c[0]) / 32768.0;
+                let r = f32::from(c[1]) / 32768.0;
+                Frame::new(l, r)
+            })
             .collect();
         let sound_data = StaticSoundData {
             sample_rate,
@@ -63,7 +64,7 @@ impl RawAudioManager {
 
         active.insert(id, PlayingSound { handle, id });
         drop(active);
-        Some(id)
+        Ok(id)
     }
 
     pub fn stop(&self, id: SoundId) {

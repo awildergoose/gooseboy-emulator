@@ -1,4 +1,3 @@
-use anyhow::Context;
 use wasmtime::Caller;
 
 use crate::{
@@ -23,10 +22,7 @@ pub fn link_audio(runtime: &WASMRuntime) -> anyhow::Result<()> {
                     .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]))
                     .collect::<Vec<i16>>();
 
-                get_raw_audio_manager()
-                    .lock()
-                    .play(&pcm, 44100)
-                    .context("failed to play audio")
+                get_raw_audio_manager().lock().play(&pcm, 44100)
             },
         )?;
         linker.func_wrap(
