@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 pub const GB_GPU_STATUS: u32 = 0;
 pub const GB_GPU_RECORD_ID: u32 = 4;
 pub const GB_GPU_TEXTURE_ID: u32 = 8;

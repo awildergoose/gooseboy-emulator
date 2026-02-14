@@ -1,4 +1,3 @@
-#![allow(clippy::unused_self)]
 use macroquad::{
     camera::Camera3D,
     math::{Quat, vec3},

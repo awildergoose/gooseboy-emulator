@@ -12,3 +12,4 @@ fast-cell = { path = "./fast_cell" }
 wasmtime = { version = "41.0.3", default-features = false, features = ["addr2line", "cache", "coredump", "cranelift", "debug-builtins", "demangle", "incremental-cache", "parallel-compilation", "pooling-allocator", "runtime"] }
 parking_lot = "0.12.5"
 kira = { version = "0.11.0" }
+dashmap = "6.1.0"
