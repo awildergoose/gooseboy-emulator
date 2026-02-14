@@ -39,6 +39,7 @@ impl MeshRegistry {
         drop(texture_registry);
         let mesh = FastCell::new(mesh);
         self.meshes.insert(self.last_id, mesh.clone());
+        log::info!("registered mesh with id {}", self.last_id);
         self.last_id += 1;
         mesh
     }
@@ -59,5 +60,18 @@ impl Debug for GpuMesh {
             .field("vertices", &self.mesh.vertices)
             .field("primitive_type", &self.primitive_type)
             .finish()
+    }
+}
+
+impl Clone for GpuMesh {
+    fn clone(&self) -> Self {
+        Self {
+            mesh: Mesh {
+                indices: self.mesh.indices.clone(),
+                vertices: self.mesh.vertices.clone(),
+                texture: self.mesh.texture.clone(),
+            },
+            primitive_type: self.primitive_type.clone(),
+        }
     }
 }

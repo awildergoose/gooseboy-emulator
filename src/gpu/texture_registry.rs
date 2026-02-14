@@ -29,6 +29,7 @@ impl TextureRegistry {
         let texture = Texture2D::from_rgba8(width as u16, height as u16, rgba);
         let texture = FastCell::new(texture);
         self.textures.insert(self.last_id, texture.clone());
+        log::info!("registered texture with id {}", self.last_id);
         self.last_id += 1;
         texture
     }
