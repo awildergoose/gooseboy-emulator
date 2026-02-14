@@ -1,0 +1,9 @@
+pub const GB_GPU_STATUS: u32 = 0;
+pub const GB_GPU_RECORD_ID: u32 = 4;
+pub const GB_GPU_TEXTURE_ID: u32 = 8;
+pub const GB_GPU_MATRIX_DEPTH: u32 = 12;
+pub const GB_STATUS_OK: u32 = 0;
+pub const GB_STATUS_BAD_TEXTURE_SIZE: u32 = 1;
+pub const GB_STATUS_BAD_TEXTURE: u32 = 2;
+pub const GB_STATUS_MATRIX_TOO_SMALL: u32 = 3;
+pub const GB_STATUS_MATRIX_TOO_BIG: u32 = 4;
