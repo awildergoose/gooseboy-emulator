@@ -82,4 +82,4 @@ This is the list of working crates from the gooseboy-rs library.
 -   [ ] Name storage file based on running crate
 -   [ ] Better CLI
 -   [ ] Allow connecting to WASM using a debugger (GDB/LLDB)
--   [ ] GPU Immediate-mode support
+-   [x] GPU Immediate-mode support
