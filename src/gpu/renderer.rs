@@ -10,6 +10,7 @@ use crate::gpu::{
 };
 use fast_cell::FastCell;
 use macroquad::{
+    models::Mesh,
     prelude::{Material, MaterialParams, ShaderSource, UniformDesc, load_material},
     texture::Texture2D,
     window::get_internal_gl,
@@ -22,10 +23,8 @@ pub struct GpuRenderer {
     pub stack: ModelMatrixStack,
     pub recordings: VecDeque<FastCell<GpuMesh>>,
     pub gpu_material: Material,
-
-    // immediate-mode
     pub bound_texture: Option<Texture2D>,
-    pub immediate_vert_count: usize,
+    pub immediate_mesh: Option<GpuMesh>,
 }
 
 impl GpuRenderer {
@@ -36,7 +35,7 @@ impl GpuRenderer {
             stack: ModelMatrixStack::new(64),
             recordings: VecDeque::new(),
             bound_texture: None,
-            immediate_vert_count: 0,
+            immediate_mesh: None,
             gpu_material: load_material(
                 ShaderSource::Glsl {
                     vertex: include_str!("../shaders/vertex.glsl"),
@@ -101,12 +100,9 @@ impl GpuRenderer {
                     }
                 }
                 GpuCommand::EmitVertex(vertex) => {
-                    let gl = unsafe { get_internal_gl().quad_gl };
                     let mut primitive_type = PrimitiveType::Triangles;
-                    let mut indices = &mut vec![];
+                    let indices: &mut Vec<u16>;
                     let len: usize;
-                    let texture: Texture2D;
-                    let has_recording = self.recordings.back_mut().is_some();
 
                     if let Some(recording) = self.recordings.back_mut() {
                         let rec = recording.get_mut();
@@ -116,7 +112,6 @@ impl GpuRenderer {
                         }
 
                         primitive_type = rec.primitive_type.clone();
-                        texture = rec.mesh.texture.clone().unwrap();
                         let mesh = &mut rec.mesh;
                         mesh.vertices.push(vertex);
                         len = mesh.vertices.len();
@@ -125,13 +120,27 @@ impl GpuRenderer {
                         let texture_registry = get_texture_registry().lock();
                         let mut missing_tex = texture_registry.get_default_texture();
                         let missing_tex_m = missing_tex.get_mut();
-                        texture = self
+                        let texture = self
                             .bound_texture
                             .clone()
                             .unwrap_or_else(|| missing_tex_m.clone());
                         drop(texture_registry);
-                        self.immediate_vert_count += 1;
-                        len = self.immediate_vert_count;
+                        if self.immediate_mesh.is_none() {
+                            self.immediate_mesh = Some(GpuMesh {
+                                mesh: Mesh {
+                                    indices: vec![],
+                                    vertices: vec![],
+                                    texture: Some(texture),
+                                },
+                                primitive_type: PrimitiveType::Triangles,
+                            });
+                        }
+
+                        let imm = self.immediate_mesh.as_mut().unwrap();
+                        imm.mesh.vertices.push(vertex);
+
+                        indices = &mut imm.mesh.indices;
+                        len = imm.mesh.vertices.len();
                     }
 
                     match primitive_type {
@@ -147,12 +156,6 @@ impl GpuRenderer {
                                 indices.extend_from_slice(&[i, i + 1, i + 2, i, i + 2, i + 3]);
                             }
                         }
-                    }
-
-                    if !has_recording {
-                        gl.texture(Some(&texture));
-                        gl.draw_mode(macroquad::prelude::DrawMode::Triangles);
-                        gl.geometry(&[vertex], indices);
                     }
                 }
                 GpuCommand::BindTexture(id) => {
@@ -192,8 +195,15 @@ impl GpuRenderer {
             }
         }
 
+        if let Some(imm) = self.immediate_mesh.as_ref() {
+            let gl = unsafe { get_internal_gl().quad_gl };
+            gl.texture(imm.mesh.texture.as_ref());
+            gl.draw_mode(macroquad::prelude::DrawMode::Triangles);
+            gl.geometry(&imm.mesh.vertices, &imm.mesh.indices);
+        }
+
         self.bound_texture = None;
-        self.immediate_vert_count = 0;
+        self.immediate_mesh = None;
         macroquad::material::gl_use_default_material();
     }
 }
