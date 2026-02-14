@@ -10,9 +10,9 @@ use crate::gpu::{
 };
 use fast_cell::FastCell;
 use macroquad::{
-    models::Mesh,
     prelude::{Material, MaterialParams, ShaderSource, UniformDesc, load_material},
     texture::Texture2D,
+    window::get_internal_gl,
 };
 use parking_lot::Mutex;
 
@@ -24,16 +24,8 @@ pub struct GpuRenderer {
     pub gpu_material: Material,
 
     // immediate-mode
-    pub immediate_meshes: VecDeque<FastCell<GpuMesh>>,
     pub bound_texture: Option<Texture2D>,
-}
-
-const fn empty_mesh() -> Mesh {
-    Mesh {
-        indices: vec![],
-        vertices: vec![],
-        texture: None,
-    }
+    pub immediate_vert_count: usize,
 }
 
 impl GpuRenderer {
@@ -43,8 +35,8 @@ impl GpuRenderer {
             queue: VecDeque::new(),
             stack: ModelMatrixStack::new(64),
             recordings: VecDeque::new(),
-            immediate_meshes: VecDeque::new(),
             bound_texture: None,
+            immediate_vert_count: 0,
             gpu_material: load_material(
                 ShaderSource::Glsl {
                     vertex: include_str!("../shaders/vertex.glsl"),
@@ -63,25 +55,6 @@ impl GpuRenderer {
         }
     }
 
-    // TODO: primitive_type
-    pub fn get_immediate_mesh(&mut self) -> FastCell<GpuMesh> {
-        let mut last = self.immediate_meshes.back();
-        if last.is_none() {
-            self.allocate_immediate_mesh();
-            last = self.immediate_meshes.back();
-        }
-        last.unwrap().clone()
-    }
-
-    // TODO: primitive_type
-    pub fn allocate_immediate_mesh(&mut self) {
-        let m = FastCell::new(GpuMesh {
-            mesh: empty_mesh(),
-            primitive_type: PrimitiveType::Triangles,
-        });
-        self.immediate_meshes.push_back(m);
-    }
-
     pub fn set_uniforms(&self) {
         let model = self.stack.top().mat;
         self.gpu_material.set_uniform("ModelView", model);
@@ -91,6 +64,7 @@ impl GpuRenderer {
         self.queue.push_back(command);
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn execute_commands(&mut self) {
         macroquad::material::gl_use_material(&self.gpu_material);
 
@@ -109,57 +83,76 @@ impl GpuRenderer {
                 GpuCommand::DrawRecorded(id) => {
                     let mesh = get_mesh_registry().lock().find_mesh(MeshId::from(id));
                     if let Some(mut mesh) = mesh {
-                        let mut m = mesh.get_mut();
-                        let mut temp: GpuMesh;
-
-                        if let Some(bound) = &self.bound_texture {
-                            temp = m.clone();
-                            temp.mesh.texture = Some(bound.clone());
-                            m = &mut temp;
-                        }
+                        let gl = unsafe { get_internal_gl().quad_gl };
+                        let m = mesh.get_mut();
 
                         self.set_uniforms();
-                        macroquad::models::draw_mesh(&m.mesh);
+
+                        if let Some(bound) = &self.bound_texture {
+                            gl.texture(Some(bound));
+                        } else {
+                            gl.texture(m.mesh.texture.as_ref());
+                        }
+
+                        gl.draw_mode(macroquad::prelude::DrawMode::Triangles);
+                        gl.geometry(&m.mesh.vertices, &m.mesh.indices);
                     } else {
                         log::error!("mesh with id {id} doesn't exist!");
                     }
                 }
                 GpuCommand::EmitVertex(vertex) => {
-                    let mut immediate = self.get_immediate_mesh();
-                    let recording_opt = self.recordings.back_mut();
-                    let recording: &mut FastCell<GpuMesh>;
+                    let gl = unsafe { get_internal_gl().quad_gl };
+                    let mut primitive_type = PrimitiveType::Triangles;
+                    let mut indices = &mut vec![];
+                    let len: usize;
+                    let texture: Texture2D;
+                    let has_recording = self.recordings.back_mut().is_some();
 
-                    // I'm sure this can be done a better way
-                    if recording_opt.is_none() {
-                        recording = &mut immediate;
+                    if let Some(recording) = self.recordings.back_mut() {
+                        let rec = recording.get_mut();
 
                         if let Some(bound) = &self.bound_texture {
-                            recording.get_mut().mesh.texture = Some(bound.clone());
+                            rec.mesh.texture = Some(bound.clone());
                         }
+
+                        primitive_type = rec.primitive_type.clone();
+                        texture = rec.mesh.texture.clone().unwrap();
+                        let mesh = &mut rec.mesh;
+                        mesh.vertices.push(vertex);
+                        len = mesh.vertices.len();
+                        indices = &mut mesh.indices;
                     } else {
-                        recording = recording_opt.unwrap();
+                        let texture_registry = get_texture_registry().lock();
+                        let mut missing_tex = texture_registry.get_default_texture();
+                        let missing_tex_m = missing_tex.get_mut();
+                        texture = self
+                            .bound_texture
+                            .clone()
+                            .unwrap_or_else(|| missing_tex_m.clone());
+                        drop(texture_registry);
+                        self.immediate_vert_count += 1;
+                        len = self.immediate_vert_count;
                     }
-
-                    let primitive_type = recording.get_mut().primitive_type.clone();
-                    let mesh = &mut recording.get_mut().mesh;
-                    mesh.vertices.push(vertex);
-
-                    let len = mesh.vertices.len();
 
                     match primitive_type {
                         PrimitiveType::Triangles => {
                             if len.is_multiple_of(3) {
                                 let i = u16::try_from(len - 3).unwrap();
-                                mesh.indices.extend_from_slice(&[i, i + 1, i + 2]);
+                                indices.extend_from_slice(&[i, i + 1, i + 2]);
                             }
                         }
                         PrimitiveType::Quads => {
                             if len.is_multiple_of(4) {
                                 let i = u16::try_from(len - 4).unwrap();
-                                mesh.indices
-                                    .extend_from_slice(&[i, i + 1, i + 2, i, i + 2, i + 3]);
+                                indices.extend_from_slice(&[i, i + 1, i + 2, i, i + 2, i + 3]);
                             }
                         }
+                    }
+
+                    if !has_recording {
+                        gl.texture(Some(&texture));
+                        gl.draw_mode(macroquad::prelude::DrawMode::Triangles);
+                        gl.geometry(&[vertex], indices);
                     }
                 }
                 GpuCommand::BindTexture(id) => {
@@ -173,10 +166,7 @@ impl GpuRenderer {
                     if let Some(recording) = self.recordings.back_mut() {
                         recording.get_mut().mesh.texture = Some(t);
                     } else {
-                        // TODO: immediate mode, set texture
-                        // todo!();
                         self.bound_texture = Some(t);
-                        self.allocate_immediate_mesh();
                     }
                 }
                 GpuCommand::RegisterTexture { w, h, rgba } => {
@@ -202,13 +192,8 @@ impl GpuRenderer {
             }
         }
 
-        while let Some(mut mesh) = self.immediate_meshes.pop_front() {
-            let m = mesh.get_mut();
-            self.set_uniforms();
-            macroquad::models::draw_mesh(&m.mesh);
-        }
-
         self.bound_texture = None;
+        self.immediate_vert_count = 0;
         macroquad::material::gl_use_default_material();
     }
 }
