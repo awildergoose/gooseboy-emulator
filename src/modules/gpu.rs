@@ -14,20 +14,15 @@ pub fn link_gpu(runtime: &WASMRuntime) -> anyhow::Result<()> {
             "get_camera_transform",
             move |mut caller: Caller<'_, WASMHostState>, ptr: WASMPointer| {
                 let mem = memory.with(|m| m.unwrap().data_mut(&mut caller));
-                let transform = &get_gpu_renderer().lock().camera.transform;
-                transform.write(mem, ptr);
+                get_gpu_renderer().lock().camera.write(mem, ptr);
             },
         )?;
         linker.func_wrap(
             "gpu",
             "set_camera_transform",
             |_: Caller<'_, WASMHostState>, x: f32, y: f32, z: f32, yaw: f32, pitch: f32| {
-                let transform = &mut get_gpu_renderer().lock().camera.transform;
-                transform.x = x;
-                transform.y = y;
-                transform.z = z;
-                transform.yaw = yaw;
-                transform.pitch = pitch;
+                let camera = &mut get_gpu_renderer().lock().camera;
+                camera.read(x, y, z, yaw, pitch);
             },
         )?;
         linker.func_wrap(
