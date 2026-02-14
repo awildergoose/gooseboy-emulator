@@ -49,7 +49,7 @@ impl<T> FastCell<T> {
             let ptr = self.value.get();
             unsafe { f(&mut *ptr) }
         }
-        #[cfg(not(debug_assertions))]
+        #[cfg(not(any(debug_assertions, feature = "borrow-check")))]
         {
             let ptr = self.value.get();
             unsafe { f(&mut *ptr) }

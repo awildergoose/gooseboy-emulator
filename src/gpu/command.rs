@@ -35,6 +35,7 @@ impl CommandReader<'_> {
 }
 
 #[repr(u8)]
+#[derive(Debug)]
 pub enum GpuCommand {
     Push,
     Pop,

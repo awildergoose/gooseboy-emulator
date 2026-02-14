@@ -8,6 +8,7 @@ use crate::gpu::{
     texture_registry::{TextureId, get_texture_registry},
 };
 use fast_cell::FastCell;
+use macroquad::prelude::{Material, MaterialParams, ShaderSource, load_material};
 use parking_lot::Mutex;
 
 pub struct GpuRenderer {
@@ -15,6 +16,7 @@ pub struct GpuRenderer {
     pub queue: VecDeque<GpuCommand>,
     pub stack: ModelMatrixStack,
     pub recordings: VecDeque<FastCell<GpuMesh>>,
+    pub gpu_material: Material,
 }
 
 impl GpuRenderer {
@@ -24,7 +26,23 @@ impl GpuRenderer {
             queue: VecDeque::new(),
             stack: ModelMatrixStack::new(64),
             recordings: VecDeque::new(),
+            gpu_material: load_material(
+                ShaderSource::Glsl {
+                    vertex: include_str!("../shaders/vertex.glsl"),
+                    fragment: include_str!("../shaders/fragment.glsl"),
+                },
+                MaterialParams::default(),
+            )
+            .expect("failed to load gpu shader"),
         }
+    }
+
+    pub fn set_uniforms(&self) {
+        // mat4 Model, Projection;
+        self.gpu_material
+            .set_uniform("Model", self.stack.top().as_cols_array());
+        // self.gpu_material
+        //     .set_uniform("Projection", self.stack.top().as_cols_array());
     }
 
     pub fn queue_command(&mut self, command: GpuCommand) {
@@ -32,8 +50,12 @@ impl GpuRenderer {
     }
 
     pub fn execute_commands(&mut self) {
+        macroquad::material::gl_use_material(&self.gpu_material);
+
         // pop and read commands, and do stuff idk
         while let Some(command) = self.queue.pop_front() {
+            // log::trace!("command: {command:?}");
+
             match command {
                 GpuCommand::Push => self.stack.push(),
                 GpuCommand::Pop => self.stack.pop(),
@@ -47,8 +69,9 @@ impl GpuRenderer {
                 }
                 GpuCommand::DrawRecorded(id) => {
                     let mesh = get_mesh_registry().lock().find_mesh(MeshId::from(id));
-                    if let Some(mesh) = mesh {
-                        let m = mesh.into_inner().unwrap();
+                    if let Some(mut mesh) = mesh {
+                        let m = mesh.get_mut();
+                        self.set_uniforms();
                         macroquad::models::draw_mesh(&m.mesh);
                     } else {
                         log::error!("mesh with id {id} doesn't exist!");
@@ -56,27 +79,33 @@ impl GpuRenderer {
                 }
                 GpuCommand::EmitVertex(vertex) => {
                     if let Some(recording) = self.recordings.back_mut() {
-                        recording.get_mut().mesh.vertices.push(vertex);
-                        // TODO: push indices?
+                        let mesh = &mut recording.get_mut().mesh;
+
+                        mesh.vertices.push(vertex);
+
+                        let len = mesh.vertices.len();
+                        if len >= 3 {
+                            let i = u16::try_from(len - 3).unwrap();
+                            mesh.indices.extend_from_slice(&[i, i + 1, i + 2]);
+                        }
                     } else {
                         // TODO: immediate mode, push vertex
+                        todo!();
                     }
                 }
                 GpuCommand::BindTexture(id) => {
-                    let texture = get_texture_registry()
-                        .lock()
-                        .find_texture(TextureId::from(id));
+                    let registry = get_texture_registry().lock();
+                    let texture = registry.find_texture(TextureId::from(id));
 
-                    if let Some(texture) = texture {
-                        let t = texture.into_inner().unwrap().clone();
+                    let mut texture = texture.unwrap_or_else(|| registry.get_default_texture());
+                    drop(registry);
+                    let t = texture.get_mut().clone();
 
-                        if let Some(recording) = self.recordings.back_mut() {
-                            recording.get_mut().mesh.texture = Some(t);
-                        } else {
-                            // TODO: immediate mode, set texture
-                        }
+                    if let Some(recording) = self.recordings.back_mut() {
+                        recording.get_mut().mesh.texture = Some(t);
                     } else {
-                        log::error!("texture not found in registry!");
+                        // TODO: immediate mode, set texture
+                        todo!();
                     }
                 }
                 GpuCommand::RegisterTexture { w, h, rgba } => {
@@ -97,6 +126,8 @@ impl GpuRenderer {
                     .set_top_from_cols(ModelMatrix::identity().as_cols_array()),
             }
         }
+
+        macroquad::material::gl_use_default_material();
     }
 }
 

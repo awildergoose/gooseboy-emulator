@@ -89,8 +89,6 @@ async fn main() {
         {
             let mut gpu = get_gpu_renderer().lock();
             set_camera(&gpu.camera.cam);
-            draw_grid(20, 1.0, GRAY, DARKGRAY);
-            draw_cube(vec3(0.0, 1.0, 0.0), vec3(1.0, 1.0, 1.0), None, RED);
             gpu.execute_commands();
         }
 

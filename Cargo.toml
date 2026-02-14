@@ -8,7 +8,7 @@ anyhow = "1.0.101"
 env_logger = "0.11.9"
 log = "0.4.29"
 macroquad = "0.4.14"
-fast-cell = { path = "./fast_cell" }
+fast-cell = { path = "./fast_cell", features = ["borrow-check"] }
 wasmtime = { version = "41.0.3", default-features = false, features = ["addr2line", "cache", "coredump", "cranelift", "debug-builtins", "demangle", "incremental-cache", "parallel-compilation", "pooling-allocator", "runtime"] }
 parking_lot = "0.12.5"
 kira = { version = "0.11.0" }

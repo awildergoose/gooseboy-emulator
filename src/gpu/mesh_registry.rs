@@ -4,7 +4,7 @@ use macroquad::models::Mesh;
 use parking_lot::Mutex;
 use std::{fmt::Debug, sync::OnceLock};
 
-use crate::gpu::vertex::PrimitiveType;
+use crate::gpu::{texture_registry::get_texture_registry, vertex::PrimitiveType};
 
 pub type MeshId = u64;
 
@@ -27,14 +27,16 @@ impl MeshRegistry {
     }
 
     pub fn create_mesh(&mut self, primitive_type: PrimitiveType) -> FastCell<GpuMesh> {
+        let texture_registry = get_texture_registry().lock();
         let mesh = GpuMesh {
             mesh: Mesh {
                 indices: vec![],
-                texture: None,
+                texture: Some(texture_registry.get_default_texture().get_mut().clone()),
                 vertices: vec![],
             },
             primitive_type,
         };
+        drop(texture_registry);
         let mesh = FastCell::new(mesh);
         self.meshes.insert(self.last_id, mesh.clone());
         self.last_id += 1;

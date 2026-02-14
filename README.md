@@ -15,7 +15,7 @@ This is the list of working crates from the gooseboy-rs library.
 -   [x] riscv
 -   [x] tests
 -   [ ] bsprenderer
--   [ ] goosegpu
+-   [x] goosegpu
 
 ## Host Functions
 
@@ -71,9 +71,9 @@ This is the list of working crates from the gooseboy-rs library.
 
 ### gpu
 
--   [ ] fn get_camera_transform(ptr: PointerMut);
--   [ ] fn set_camera_transform(x: f32, y: f32, z: f32, yaw: f32, pitch: f32);
--   [ ] fn submit_gpu_commands(ptr: Pointer, count: i32);
+-   [x] fn get_camera_transform(ptr: PointerMut);
+-   [x] fn set_camera_transform(x: f32, y: f32, z: f32, yaw: f32, pitch: f32);
+-   [x] fn submit_gpu_commands(ptr: Pointer, count: i32);
 -   [ ] fn gpu_read(offset: i32, ptr: Pointer, len: i32) -> i32;
 
 ## TODO
@@ -82,3 +82,4 @@ This is the list of working crates from the gooseboy-rs library.
 -   [ ] Name storage file based on running crate
 -   [ ] Better CLI
 -   [ ] Allow connecting to WASM using a debugger (GDB/LLDB)
+-   [ ] GPU Immediate-mode support
