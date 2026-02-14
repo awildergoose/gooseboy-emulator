@@ -55,8 +55,8 @@ pub enum GpuCommand {
 
 // TODO opcode table
 impl GpuCommand {
-    pub fn size_of(buf: &[u8]) -> u32 {
-        let mut reader = CommandReader { buf, pos: 0 };
+    pub fn size_of(buf: &[u8], pos: usize) -> u32 {
+        let mut reader = CommandReader { buf, pos };
         let opcode = reader.read_u8();
 
         match opcode {
@@ -79,8 +79,8 @@ impl GpuCommand {
     }
 
     #[allow(clippy::many_single_char_names)]
-    pub fn deserialize(buf: &[u8]) -> Self {
-        let mut reader = CommandReader { buf, pos: 0 };
+    pub fn deserialize(buf: &[u8], pos: usize) -> Self {
+        let mut reader = CommandReader { buf, pos };
         let opcode = reader.read_u8();
 
         match opcode {

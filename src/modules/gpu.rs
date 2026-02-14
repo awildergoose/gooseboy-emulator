@@ -1,7 +1,7 @@
 use wasmtime::Caller;
 
 use crate::{
-    gpu::renderer::get_gpu_renderer,
+    gpu::{command::GpuCommand, renderer::get_gpu_renderer},
     wasm::{WASMHostState, WASMPointer, WASMRuntime},
 };
 
@@ -9,6 +9,7 @@ pub fn link_gpu(runtime: &WASMRuntime) -> anyhow::Result<()> {
     let memory = runtime.memory.clone();
 
     runtime.linker.with(|linker| {
+        let memory = runtime.memory.clone();
         linker.func_wrap(
             "gpu",
             "get_camera_transform",
@@ -25,10 +26,24 @@ pub fn link_gpu(runtime: &WASMRuntime) -> anyhow::Result<()> {
                 camera.read(x, y, z, yaw, pitch);
             },
         )?;
+        let memory = runtime.memory.clone();
         linker.func_wrap(
             "gpu",
             "submit_gpu_commands",
-            |_: Caller<'_, WASMHostState>, _ptr: WASMPointer, _count: u32| {},
+            move |mut caller: Caller<'_, WASMHostState>, ptr: WASMPointer, count: u32| {
+                let mem = memory.with(|m| m.unwrap().data_mut(&mut caller));
+
+                let mut offset = ptr as usize;
+                let end = (ptr + count) as usize;
+
+                while offset < end {
+                    let size = GpuCommand::size_of(mem, offset);
+                    let command = GpuCommand::deserialize(mem, offset);
+                    get_gpu_renderer().lock().queue_command(command);
+
+                    offset += 1 + (size as usize);
+                }
+            },
         )?;
         linker
             .func_wrap(
