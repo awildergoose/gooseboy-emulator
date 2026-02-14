@@ -108,7 +108,7 @@ impl GpuRenderer {
                         recording.get_mut().mesh.texture = Some(t);
                     } else {
                         // TODO: immediate mode, set texture
-                        todo!();
+                        // todo!();
                     }
                 }
                 GpuCommand::RegisterTexture { w, h, rgba } => {

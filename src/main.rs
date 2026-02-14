@@ -18,15 +18,21 @@ mod storage;
 mod utils;
 pub mod wasm;
 
-pub const SCREEN_WIDTH: i32 = 640;
-pub const SCREEN_HEIGHT: i32 = 480;
+pub const SCREEN_WIDTH: i32 = 800;
+pub const SCREEN_HEIGHT: i32 = 600;
 
-fn window_conf() -> Conf {
-    Conf {
-        window_title: "Gooseboy Emulator".to_owned(),
-        window_width: SCREEN_WIDTH,
-        window_height: SCREEN_HEIGHT,
-        window_resizable: false,
+fn window_conf() -> macroquad::conf::Conf {
+    macroquad::conf::Conf {
+        miniquad_conf: Conf {
+            window_title: "Gooseboy Emulator".to_owned(),
+            window_width: SCREEN_WIDTH,
+            window_height: SCREEN_HEIGHT,
+            window_resizable: false,
+            ..Default::default()
+        },
+        default_filter_mode: FilterMode::Nearest,
+        draw_call_vertex_capacity: 100_000,
+        draw_call_index_capacity: 100_000,
         ..Default::default()
     }
 }
