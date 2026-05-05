@@ -59,10 +59,11 @@ This is the list of working crates from the gooseboy-rs library.
 
 -   [x] fn get_time_nanos() -> i64;
 -   [x] fn has_permission(permission: i32) -> bool;
+-   [x] fn get_platform_name(ptr: Pointer) -> i32;
 
 ### audio
 
--   [x] fn play_audio(ptr: Pointer, len: i32) -> i64;
+-   [x] fn play_audio(ptr: Pointer, len: i32, sample_rate: i32, format: i32) -> i64;
 -   [x] fn stop_audio(id: i64);
 -   [x] fn stop_all_audio();
 -   [x] fn set_audio_volume(id: i64, volume: f32);
@@ -71,10 +72,10 @@ This is the list of working crates from the gooseboy-rs library.
 
 ### gpu
 
--   [x] fn get_camera_transform(ptr: PointerMut);
--   [x] fn set_camera_transform(x: f32, y: f32, z: f32, yaw: f32, pitch: f32);
--   [x] fn submit_gpu_commands(ptr: Pointer, count: i32);
--   [ ] fn gpu_read(offset: i32, ptr: Pointer, len: i32) -> i32;
+-   [x] fn get_camera_transform(ptr: PointerMut) -> i32;
+-   [x] fn set_camera_transform(x: f32, y: f32, z: f32, yaw: f32, pitch: f32) -> i32;
+-   [x] fn submit_gpu_commands(ptr: Pointer, count: i32) -> i32;
+-   [x] fn gpu_read(offset: i32, ptr: Pointer, len: i32) -> i32;
 
 ## TODO
 
@@ -82,4 +83,5 @@ This is the list of working crates from the gooseboy-rs library.
 -   [ ] Name storage file based on running crate
 -   [ ] Better CLI
 -   [ ] Allow connecting to WASM using a debugger (GDB/LLDB)
--   [x] GPU Immediate-mode support
+-   [ ] Run gbcrate files directly instead of WASM files
+-   [ ] Permissions

@@ -6,11 +6,9 @@ use crate::gpu::{
     mesh_registry::{GpuMesh, MeshId, get_mesh_registry},
     model_matrix::{ModelMatrix, ModelMatrixStack},
     texture_registry::{TextureId, get_texture_registry},
-    vertex::PrimitiveType,
 };
 use fast_cell::FastCell;
 use macroquad::{
-    models::Mesh,
     prelude::{Material, MaterialParams, ShaderSource, UniformDesc, load_material},
     texture::Texture2D,
     window::get_internal_gl,
@@ -24,7 +22,6 @@ pub struct GpuRenderer {
     pub recordings: VecDeque<FastCell<GpuMesh>>,
     pub gpu_material: Material,
     pub bound_texture: Option<Texture2D>,
-    pub immediate_mesh: Option<GpuMesh>,
 }
 
 impl GpuRenderer {
@@ -35,7 +32,6 @@ impl GpuRenderer {
             stack: ModelMatrixStack::new(64),
             recordings: VecDeque::new(),
             bound_texture: None,
-            immediate_mesh: None,
             gpu_material: load_material(
                 ShaderSource::Glsl {
                     vertex: include_str!("../shaders/vertex.glsl"),
@@ -100,11 +96,6 @@ impl GpuRenderer {
                     }
                 }
                 GpuCommand::EmitVertex(vertex) => {
-                    let mut primitive_type = PrimitiveType::Triangles;
-                    let immediate_mode = self.recordings.is_empty();
-                    let indices: &mut Vec<u16>;
-                    let len: usize;
-
                     if let Some(recording) = self.recordings.back_mut() {
                         let rec = recording.get_mut();
 
@@ -112,66 +103,10 @@ impl GpuRenderer {
                             rec.mesh.texture = Some(bound.clone());
                         }
 
-                        primitive_type = rec.primitive_type.clone();
                         let mesh = &mut rec.mesh;
                         mesh.vertices.push(vertex);
-                        len = mesh.vertices.len();
-                        indices = &mut mesh.indices;
                     } else {
-                        let texture_registry = get_texture_registry().lock();
-                        let mut missing_tex = texture_registry.get_default_texture();
-                        let missing_tex_m = missing_tex.get_mut();
-                        let texture = self
-                            .bound_texture
-                            .clone()
-                            .unwrap_or_else(|| missing_tex_m.clone());
-                        drop(texture_registry);
-                        if self.immediate_mesh.is_none() {
-                            self.immediate_mesh = Some(GpuMesh {
-                                mesh: Mesh {
-                                    indices: vec![],
-                                    vertices: vec![],
-                                    texture: Some(texture),
-                                },
-                                primitive_type: primitive_type.clone(),
-                            });
-                        }
-
-                        let imm = self.immediate_mesh.as_mut().unwrap();
-                        imm.mesh.vertices.push(vertex);
-
-                        indices = &mut imm.mesh.indices;
-                        len = imm.mesh.vertices.len();
-                    }
-
-                    let mut is_multiple = false;
-
-                    match primitive_type {
-                        PrimitiveType::Triangles => {
-                            if len.is_multiple_of(3) {
-                                let i = u16::try_from(len - 3).unwrap();
-                                indices.extend_from_slice(&[i, i + 1, i + 2]);
-                                is_multiple = true;
-                            }
-                        }
-                        PrimitiveType::Quads => {
-                            if len.is_multiple_of(4) {
-                                let i = u16::try_from(len - 4).unwrap();
-                                indices.extend_from_slice(&[i, i + 1, i + 2, i, i + 2, i + 3]);
-                                is_multiple = true;
-                            }
-                        }
-                    }
-
-                    if is_multiple && immediate_mode {
-                        let gl = unsafe { get_internal_gl().quad_gl };
-                        self.set_uniforms();
-                        let imm = self.immediate_mesh.as_mut().unwrap();
-                        gl.texture(imm.mesh.texture.as_ref());
-                        gl.draw_mode(macroquad::prelude::DrawMode::Triangles);
-                        gl.geometry(&imm.mesh.vertices, &imm.mesh.indices);
-
-                        self.immediate_mesh = None;
+                        panic!("immediate-mode is not supported");
                     }
                 }
                 GpuCommand::BindTexture(id) => {
@@ -212,7 +147,6 @@ impl GpuRenderer {
         }
 
         self.bound_texture = None;
-        self.immediate_mesh = None;
         macroquad::material::gl_use_default_material();
     }
 }

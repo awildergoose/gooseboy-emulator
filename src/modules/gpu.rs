@@ -14,6 +14,7 @@ pub fn link_gpu(runtime: &WASMRuntime) -> anyhow::Result<()> {
             move |mut caller: Caller<'_, WASMHostState>, ptr: WASMPointer| {
                 let mem = memory.with(|m| m.unwrap().data_mut(&mut caller));
                 get_gpu_renderer().lock().camera.write(mem, ptr);
+                1i32
             },
         )?;
         linker.func_wrap(
@@ -22,6 +23,7 @@ pub fn link_gpu(runtime: &WASMRuntime) -> anyhow::Result<()> {
             |_: Caller<'_, WASMHostState>, x: f32, y: f32, z: f32, yaw: f32, pitch: f32| {
                 let camera = &mut get_gpu_renderer().lock().camera;
                 camera.read(x, y, z, yaw, pitch);
+                1i32
             },
         )?;
         let memory = runtime.memory.clone();
@@ -41,6 +43,8 @@ pub fn link_gpu(runtime: &WASMRuntime) -> anyhow::Result<()> {
 
                     offset += 1 + (size as usize);
                 }
+
+                1i32
             },
         )?;
         let memory = runtime.memory.clone();
